@@ -25,6 +25,7 @@ windows端需要adb工具.
 
 接着在手机(模拟器)上打开 ATX(小黄车) ，点击 启动 UIAutomator 选项，确保 UIAutomator 是运行的。
 
+**模拟器分辨率要求540*960,手机版本.**
 
 ## 刷初始号功能
 本项目下zhanghao.txt为待刷账号与密码. 
