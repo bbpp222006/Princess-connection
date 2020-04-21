@@ -13,11 +13,6 @@ class Automator:
         self.d = u2.connect()
         self.dWidth, self.dHeight = self.d.window_size()
         self.appRunning = False
-        self.auto_task = auto_task
-        self.auto_policy = auto_policy
-        self.auto_goods = auto_goods
-        self.loot_speedup = speedup
-
 
     def start(self):
         """
@@ -52,7 +47,7 @@ class Automator:
         self.d.clear_text()
         self.d.send_keys(str(pwd))
         self.d(resourceId="com.bilibili.priconne:id/bsgamesdk_buttonLogin").click()
-        time.sleep(1)
+        time.sleep(5)
         if self.d(resourceId="com.bilibili.priconne:id/bsgamesdk_edit_authentication_name").exists(timeout=0.1):
             return 1#说明要进行认证
         else:
@@ -69,9 +64,9 @@ class Automator:
         self.d(resourceId="com.bilibili.priconne:id/bagamesdk_auth_success_comfirm").click()
 
 
-    def get_butt_stat(self,screen_shot,template_paths,threshold=0.85):
-        #此函数输入要判断的图片path,屏幕截图, 返回大于阈值的path,坐标字典, 阈值默认为0.9
-        # template_paths = ['img/dengji.jpg']
+    def get_butt_stat(self,screen_shot,template_paths,threshold=0.84):
+        #此函数输入要判断的图片path,屏幕截图, 阈值,   返回大于阈值的path,坐标字典,
+        self.dWidth, self.dHeight = self.d.window_size()
         return_dic = {}
         zhongxings, max_vals = UIMatcher.findpic(screen_shot, template_paths=template_paths)
         for i, name in enumerate(template_paths):
@@ -83,48 +78,41 @@ class Automator:
 
 
     def guochang(self,screen_shot,template_paths,suiji = 1):
-        #输入截图, 模板list, 得到下一次操作, 返回值:0正常, 1没找到, 2特殊标记
+        # suji标号置1, 表示未找到时将点击左上角, 置0则不点击
+        #输入截图, 模板list, 得到下一次操作
 
-        out_flag = 0
         self.dWidth, self.dHeight = self.d.window_size()
-        time.sleep(0.1)
         screen_shot = screen_shot
         template_paths = template_paths
         active_path = self.get_butt_stat(screen_shot,template_paths)
         if active_path:
             print(active_path)
-            print('当前分辨率',self.dWidth, self.dHeight)
             if 'img/caidan_tiaoguo.jpg'in active_path:
                 x,y = active_path['img/caidan_tiaoguo.jpg']
                 self.d.click(x, y)
-            # if 'img/baoshigoumai.jpg'in active_path:
-            #     print('宝石不足,跳出循环')
-            #     out_flag = 2
             else:
                 for name, (x,y) in active_path.items():
                     print(name)
                     self.d.click(x, y)
+            time.sleep(0.5)
         else:
             if suiji:
                 print('未找到所需的按钮,将点击左上角')
                 self.d.click( 0.1*self.dWidth,  0.1*self.dHeight)
             else:
                 print('未找到所需的按钮,无动作')
-            out_flag = 1
 
-        return out_flag
 
 
     def jiaoxue(self,screen_shot):
         x,y = UIMatcher.find_gaoliang(screen_shot)
         try:
             self.d.click(x*self.dWidth,y*self.dHeight+20)
-
         except:
             pass
 
     def get_screen_state(self,screen):
-        # screen = UIMatcher.RotateClockWise90(screen)
+        self.dWidth, self.dHeight = self.d.window_size()
         gray = cv2.cvtColor(screen, cv2.COLOR_RGB2GRAY)
         ret, binary = cv2.threshold(gray, 130, 255, cv2.THRESH_BINARY)
         num_of_white = len(np.argwhere(binary == 255))
@@ -148,48 +136,39 @@ class Automator:
 
     def zhandou(self):
         #此函数在进入战斗后调用, 会一直运行直到战斗结束.
+
         print('尝试跳过战斗')
         screen_shot = self.d.screenshot(format="opencv")
         a.guochang(screen_shot, ['img/caidan.jpg'])
         time.sleep(0.5)
         screen_shot = self.d.screenshot(format="opencv")
-        active_path = self.get_butt_stat(screen_shot, ['img/ok.jpg'])
+        active_path = self.get_butt_stat(screen_shot, ['img/caidan_tiaoguo.jpg', 'img/zhandou_fanhui.jpg', 'img/ok.jpg'])
         if 'img/ok.jpg' in active_path:
             x,y = active_path['img/ok.jpg']
             print('可以跳过')
             self.d.click(x, y)
-            return 0
-        self.d.click( 0.1*self.dWidth,  0.1*self.dHeight)
-
-        active_path = self.get_butt_stat(screen_shot, ['img/kuaijin.jpg'])
-        if 'img/kuaijin.jpg' in active_path:
-            time.sleep(0.5)
-            self.d.click(912, 496)
-        ok_time = 0
-
-        while True:
-            time.sleep(0.1)
-            screen_shot = self.d.screenshot(format="opencv")
-            active_path = self.get_butt_stat(screen_shot, ['img/zhandou_ok.jpg','img/xiayibu.jpg'])
-            if 'img/zhandou_ok.jpg' in active_path:
-                x, y = active_path['img/zhandou_ok.jpg']
-                self.d.click(x, y)
-                ok_time+=1
-            if 'img/xiayibu.jpg' in active_path:
-                x, y = active_path['img/xiayibu.jpg']
-                self.d.click(x, y)
-                ok_time += 1
-
-            if ok_time>=3:
-                active_path = self.get_butt_stat(screen_shot, ['img/zhandou_ok.jpg', 'img/xiayibu.jpg'])
-                if 'img/zhandou_ok.jpg' in active_path:
-                    x, y = active_path['img/zhandou_ok.jpg']
+        elif 'img/zhandou_fanhui.jpg' in active_path:
+            x, y = active_path['img/zhandou_fanhui.jpg']
+            print('无法跳过,确认进入战斗模式,将进入战斗循环')
+            self.d.click(x, y)
+            while True:
+                time.sleep(0.5)
+                screen_shot = self.d.screenshot(format="opencv")
+                active_path = self.get_butt_stat(screen_shot, ['img/wanjiadengji.jpg','img/kuaijin.jpg'])
+                if 'img/kuaijin.jpg' in active_path:
+                    x, y = active_path['img/kuaijin.jpg']
                     self.d.click(x, y)
-                if 'img/xiayibu.jpg' in active_path:
-                    x, y = active_path['img/xiayibu.jpg']
-                    self.d.click(x, y)
-                print('战斗应该结束了. 跳出循环')
-                break
+                if 'img/wanjiadengji.jpg' in active_path:
+                    print('战斗应该结束了. 跳出战斗循环')
+                    break
+
+        else:
+            print('没有找到跳过或者战斗的确认信号,将返回大循环')
+
+
+
+
+
 
 
 
@@ -232,7 +211,7 @@ def init_acc():
             template_paths = ['img/tiaoguo.jpg', 'img/ok.jpg','img/xiayibu.jpg', 'img/caidan.jpg', 'img/caidan_yuan.jpg',
                                       'img/caidan_tiaoguo.jpg', 'img/dengji.jpg','img/tongyi.jpg','img/niudan_jiasu.jpg']
             a.guochang(screen_shot,template_paths)
-        time.sleep(0.5)
+
 
 
 def shouqu():
@@ -274,7 +253,6 @@ def write_log(account, pwd):
     touxiang_path_list = []
     for touxiang_path in os.listdir(base_path):
         touxiang_path_list.append(base_path+touxiang_path)
-    print(touxiang_path_list)
     screen_shot = a.d.screenshot(format="opencv")
     exist_list = a.get_butt_stat(screen_shot, touxiang_path_list)
     print(exist_list)
@@ -298,11 +276,10 @@ account_dic = {}
 
 with open('zhanghao.txt','r') as f:
     for i,line in enumerate(f):
-        if i<0:  #这里可以控制从哪里开始读
+        if i<47:
             continue
         account,password = line.split('\t')[0:2]
         account_dic[account]=password
-print(account_dic)
 
 for account in account_dic:
     print(account, account_dic[account])
