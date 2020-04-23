@@ -279,7 +279,7 @@ with open('zhanghao.txt','r') as f:
         # if i<47:
         #     continue
         account,password = line.split('\t')[0:2]
-        account_dic[account]=password
+        account_dic[account]=password.strip()
 
 for account in account_dic:
     print(account, account_dic[account])
@@ -289,3 +289,9 @@ for account in account_dic:
     niudan()
     write_log(account, account_dic[account])
     change_acc()
+
+# 若无账号密码, 注释掉上面的for循环后, 用下面的替换
+# init_acc()
+# shouqu()
+# niudan()
+# write_log(account, account_dic[account])
